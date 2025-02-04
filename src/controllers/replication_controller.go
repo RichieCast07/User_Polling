@@ -138,26 +138,3 @@ func LongPollingEndpoint(c *gin.Context) {
 		}
 	}
 }
-
-func StreamReplicatedProducts(c *gin.Context) {
-	repMu.Lock()
-	defer repMu.Unlock()
-
-	interval := 2 * time.Second
-	productChan := make(chan ReplicatedProduct)
-	go func() {
-		for _, prod := range replicatedProducts {
-			productChan <- prod
-			time.Sleep(interval)
-		}
-		close(productChan)
-	}()
-
-	c.Stream(func(w io.Writer) bool {
-		if prod, ok := <-productChan; ok {
-			c.SSEvent("product", prod)
-			return true
-		}
-		return false
-	})
-}
